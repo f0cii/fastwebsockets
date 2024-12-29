@@ -34,7 +34,7 @@ path = "examples/tls_client.rs"
 required-features = ["upgrade"]
 
 [dependencies]
-tokio = { version = "1.25.0",  default-features = false, features = ["io-util"] }
+tokio = { version = "1.42.0",  default-features = false, features = ["io-util"] }
 simdutf8 = { version = "0.1.4", optional = true }
 hyper = { version = "0.14.26", features = ["http1", "server", "client"], optional = true }
 pin-project = { version = "1.0.8", optional = true }
@@ -43,14 +43,17 @@ sha1 = { version = "0.10.5", optional = true }
 utf-8 = "0.7.5"
 rand = "0.8.4"
 thiserror = "1.0.40"
+futures = "0.3"
+local-sync = "0.0.5"
+pin-project-lite = "0.2"
 
 [features]
-default = ["simd"]
+default = ["simd", "upgrade"]
 simd = ["simdutf8/aarch64_neon"]
 upgrade = ["hyper", "pin-project", "base64", "sha1"]
 
 [dev-dependencies]
-tokio = { version = "1.25.0", features = ["full", "macros"] }
+tokio = { version = "1.42.0", features = ["full", "macros"] }
 tokio-rustls = "0.24.0"
 rustls-pemfile = "1.0"
 hyper = { version = "0.14.26", features = ["http1", "server", "client", "tcp"] }
@@ -59,8 +62,17 @@ trybuild = "1.0.80"
 criterion = "0.4.0"
 anyhow = "1.0.71"
 webpki-roots = "0.23.0"
-monoio = { version = "0.1.9",  default-features = false, features = ["async-cancel", "sync", "bytes", "legacy", "macros", "utils", "tokio-compat"] }
-monoio-compat = { version = "0.1.2" }
+monoio = { version = "0.2.4", default-features = false, features = [
+    "async-cancel",
+    "sync",
+    "bytes",
+    "iouring",
+    "legacy",
+    "macros",
+    "utils",
+    "poll-io",      # experimental
+] }
+monoio-compat = { version = "0.2.2", features = ["hyper"] }
 
 [[bench]]
 name = "unmask"

@@ -30,13 +30,13 @@ fn tls_connector() -> Result<TlsConnector> {
     Ok(TlsConnector::from(Arc::new(config)))
 }
 
-async fn handle_websocket_upgrade(uri: Uri, port: u16) -> Result<(), WebSocketError> {
+async fn connect_and_handle_websocket(uri: Uri, port: u16) -> Result<(), WebSocketError> {
     // 1. 创建HTTP客户端
     let host = uri.host().expect("uri has no host");
     let port = uri.port_u16().unwrap_or(port);
     let addr = format!("{}:{}", host, port);
     let stream = TcpStream::connect(&addr).await?;
-    let tcp_stream = HyperConnection(stream);
+    let tcp_stream = HyperConnection(stream.try_into_poll_io().map_err(|(e, _)| e)?);
     println!("Connected to: {:?}", addr);
     let domain = tokio_rustls::rustls::ServerName::try_from(uri.to_string().as_str())
         .map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidInput, "invalid dnsname"))?;
@@ -89,7 +89,7 @@ async fn main() {
     // !!!!! do not use proxychains or other proxy tools, the tcp steam connect may be failed !!!!
     let uri: Uri = "data-stream.binance.com".parse::<hyper::Uri>().unwrap();
     let port = 9443;
-    handle_websocket_upgrade(uri, port).await.unwrap();
+    connect_and_handle_websocket(uri, port).await.unwrap();
 }
 
 #[derive(Clone)]
@@ -106,8 +106,8 @@ where
 }
 
 use std::pin::Pin;
-// struct HyperConnection(monoio::net::tcp::stream_poll::TcpStreamPoll);
-struct HyperConnection(monoio::net::TcpStream);
+struct HyperConnection(monoio::net::tcp::stream_poll::TcpStreamPoll);
+// struct HyperConnection(monoio::net::TcpStream);
 
 impl tokio::io::AsyncRead for HyperConnection {
     #[inline]
